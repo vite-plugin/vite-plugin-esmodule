@@ -1,4 +1,8 @@
 
+## [2022-07-01] v1.3.1
+
+- fix(🐞): `require('vite-plugin-optimizer')`
+
 ## [2022-07-01] v1.3.0
 
 - 11521dd docs: v1.3.0
