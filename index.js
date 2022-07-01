@@ -1,132 +1,158 @@
 const fs = require('fs');
 const path = require('path');
-const vite = require('vite');
 const webpack = require('webpack');
-const optimizer = require('vite-plugin-optimizer');
-const { externalBuiltin } = require('./utils');
+const optimizer = require('./node_modules/vite-plugin-optimizer');
 
-const name = 'vite-plugin-esmodule';
+const PLUGIN_NAME = 'vite-plugin-esmodule';
+const CACHE_DIR = `.${PLUGIN_NAME}`;
 
 /**
  * @type {import('.').Esmodule}
  */
 module.exports = function esmodule(modules, options = {}) {
+  /**
+   * @type {import('vite').ConfigEnv}
+   */
+  let env;
+
   const plugin = optimizer(
-    modules.reduce((memo, mod, idx) => {
+    (modules || []).reduce((memo, mod, idx) => {
       if (typeof mod === 'object') {
         // e.g. { 'file-type': 'file-type/index.js' }
         mod = Object.keys(mod)[0];
       }
       return Object.assign(memo, {
         [mod]: async args => {
-          if (idx === modules.length - 1) {
-            await buildESModules(args, modules, options); // One time build
+          const isDev = env.command === 'serve';
+          const moduleCjsId = path.join(args.dir, mod, 'index.js');
+          const moduleEsmId = path.join(args.dir, mod, 'index.electron-renderer.js');
+          if (idx === modules.length - 1) { // One time build
+            await buildESModules(args, modules, options);
+            isDev && writeEsmModules(args, modules);
           }
-          return { alias: { find: mod } }; // Keep alias registration
+          // return { alias: { find: mod } }; // Keep alias registration
+          return {
+            alias: {
+              find: mod,
+              replacement: isDev ? moduleEsmId : moduleCjsId,
+            }
+          };
         },
       })
     }, {}),
-    { dir: `.${name}` },
+    { dir: CACHE_DIR },
   );
 
-  plugin.name = name;
-  plugin.apply = 'build';
-
+  plugin.name = PLUGIN_NAME;
   return [
-    externalBuiltin(),
     {
-      name: `${name}:resolveId`,
-      apply: 'build',
-      enforce: 'pre',
-      resolveId(source) {
-        const module = modules.find(mod => mod === source);
-        // Tell vite not to process this module
-        if (module) module;
+      name: `${PLUGIN_NAME}:init`,
+      config(_, _env) {
+        env = _env;
       },
     },
-    plugin,
+    plugin
   ];
+
+  // return [
+  //   {
+  //     name: `${name}:resolve`,
+  //     apply: 'build',
+  //     enforce: 'pre',
+  //     resolveId(source) {
+  //       // Bypass Vite's `vite:resolve` plugin
+  //       return modules.includes(source) ? source : null;
+  //     },
+  //   },
+  //   plugin,
+  // ];
 };
 
 /**
- * Build CommonJs module here,
- * and output the file to the alias pointing path of vite-plugin-optimizer
- * 
  * @type {(args: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('.').Esmodule>) => Promise<void>}
  */
 async function buildESModules(args, modules, options) {
-  const node_modules = args.dir.replace(`.${name}`, '');
   const entries = modules.reduce((memo, mod) => {
     const [key, val] = typeof mod === 'object' ? Object.entries(mod)[0] : [mod, mod];
-    return Object.assign(memo, { [key]: path.resolve(node_modules, val) });
+    return Object.assign(memo, {
+      // This is essentially an alias
+      // e.g. { esm-pkg: 'node_modules/.vite-plugin-esmodule/esm-pkg.js' }
+      [key]: require.resolve(val),
+    });
   }, {});
 
-  if (options.vite) {
-    // TODO: Building multiple modules in parallel
-    // 🚧 There may be some problems
-    Object.entries(entries).forEach(async ([moduleId, filepath]) => {
-      await vite.build({
-        // 🚧 Avoid recursive build caused by load config file
-        configFile: false,
-        plugins: [
-          externalBuiltin(),
-        ],
-        build: {
-          minify: false,
-          emptyOutDir: false,
-          lib: {
-            entry: filepath,
-            formats: ['cjs'],
-            fileName: () => '[name].js',
-          },
-          outDir: path.join(args.dir, moduleId),
-        },
-        resolve: {
-          conditions: ['node'],
-        },
-      });
-    });
-  } else {
-    /**
-     * Built using webpack by default
-     * @type {import('webpack').Configuration}
-     */
-    let config = {
-      mode: 'none',
-      target: 'node10',
-      entry: entries,
-      output: {
-        library: {
-          type: 'commonjs2',
-        },
-        path: args.dir,
-        filename: '[name].js',
+  /**
+   * @type {import('webpack').Configuration}
+   */
+  let config = {
+    mode: 'none',
+    target: 'node14',
+    entry: entries,
+    output: {
+      library: {
+        type: 'commonjs2',
       },
-    };
-    if (typeof options.webpack === 'function') {
-      config = options.webpack(config) || config;
-    }
+      path: args.dir,
+      filename: '[name]/index.js',
+    },
+  };
+  if (typeof options.webpack === 'function') {
+    config = options.webpack(config) || config;
+  }
 
-    await new Promise(resolve => {
-      fs.rmSync(args.dir, { recursive: true, force: true });
+  await new Promise(resolve => {
+    fs.rmSync(args.dir, { recursive: true, force: true });
 
-      webpack.webpack(config).run((error, stats) => {
-        resolve(null);
+    // Whey use Webpack?
+    // Some ESM packages depend on CJS packages, which is rellay confusing.
+    // In thes case, using Webpack is more reliable.
+    webpack.webpack(config).run((error, stats) => {
+      if (error) {
+        logError(error);
+      }
+      if (stats.hasErrors()) {
+        const errorMsg = stats.toJson().errors.map(msg => `
+${msg.message}
+${msg.stack}
+`).join('\n');
+        logError(errorMsg);
+      }
 
-        if (error) {
-          console.log(error);
-          process.exit(1);
-        }
-        if (stats.hasErrors()) {
-          stats.toJson().errors.forEach(msg => {
-            console.log(msg.message, '\n');
-            console.log(msg.stack, '\n');
-          });
-          process.exit(1);
-        }
-
-        console.log(`[${name}] build with webpack success.`);
-      });
+      resolve(null);
+      console.log(`\n[${PLUGIN_NAME}]`, modules, `build succeeded.\n`);
     });
+  });
+}
+
+function logError(error, exit = true) {
+  console.log(error);
+
+  console.log(`\n[${PLUGIN_NAME}] build failed.\n`);
+  exit && process.exit(1);
+}
+
+/**
+ * @type {(args: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('.').Esmodule>) => Promise<void>}
+ */
+function writeEsmModules(args, modules) {
+  for (const mod of modules) {
+    const moduleName = typeof mod === 'object' ? Object.keys(mod)[0] : mod
+    const moduleCjsId = path.join(args.dir, moduleName, 'index.js');
+    const moduleEsmId = path.join(args.dir, moduleName, 'index.electron-renderer.js');
+
+    // 🚧 For Electron-Renderer
+    const cjsModule = require(moduleCjsId);
+    const requireModule = `const _M_ = require("${CACHE_DIR}/${mod}");`;
+    const exportDefault = `const _D_ = _M_.default || _M_;\nexport { _D_ as default };`;
+    const exportMembers = Object
+      .keys(cjsModule)
+      .filter(n => n !== 'default')
+      .map(attr => `export const ${attr} = _M_.${attr};`).join('\n')
+    const esmModuleCodeSnippet = `
+${requireModule}
+${exportDefault}
+${exportMembers}
+`.trim();
+    fs.writeFileSync(moduleEsmId, esmModuleCodeSnippet);
   }
 }
