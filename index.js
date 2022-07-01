@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
-const optimizer = require('./node_modules/vite-plugin-optimizer');
+const optimizer = require('vite-plugin-optimizer');
 
 const PLUGIN_NAME = 'vite-plugin-esmodule';
 const CACHE_DIR = `.${PLUGIN_NAME}`;
