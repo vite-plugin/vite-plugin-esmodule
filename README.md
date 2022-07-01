@@ -1,55 +1,44 @@
 # vite-plugin-esmodule
 
-Build ES module to CommonJs module for Node.js
+Build ES module to CommonJs module for Node.js/Electron
 
 [![NPM version](https://img.shields.io/npm/v/vite-plugin-esmodule.svg?style=flat)](https://npmjs.org/package/vite-plugin-esmodule)
 [![NPM Downloads](https://img.shields.io/npm/dm/vite-plugin-esmodule.svg?style=flat)](https://npmjs.org/package/vite-plugin-esmodule)
 
-English | [简体中文](https://github.com/vite-plugin/vite-plugin-esmodule/README.zh-CN.md)
+## Why 🤔
 
-## Why
+When using ES modules(e.g.`node-fetch`) in Node.js/Electron projects, we may need to compile them into CommonJs modules to ensure they work correctly.
 
-🤔 When ES module such as [execa](https://www.npmjs.com/package/execa), [node-fetch](https://www.npmjs.com/package/node-fetch), [file-type](https://www.npmjs.com/package/file-type) used in the Node.js project, we should compile them into CommonJs modules to ensure that they can work normally
+*在 Node.js/Electron 项目中使用 ES 模块时(e.g. `node-fetch`)，我们可能需要将其编译成 CommonJs 模块，以确保它们能够正常工作*
 
-👉 You can think that this plugin is to solve some NPM Packges released by [sindresorhus](https://www.npmjs.com/~sindresorhus) 😅
+## Install
 
-🚧 The plugin only work in the `vite build` phase
+```sh
+npm i vite-plugin-electron-renderer -D
+```
 
 ## Usage
 
-Take execa, node-fetch and file-type as examples
-
-- vite.config.js
+vite.config.js
 
 ```js
 import esmodule from 'vite-plugin-esmodule'
 
 export default {
   plugins: [
+    // Take `execa`, `node-fetch` and `file-type` as examples
     esmodule([
       'execa',
       'node-fetch',
 
-      // `file-type` have exports condition in package.json
-      // this means that you have explicit specified the entry file
-      // 🌱 the purpose of this design is to eliminate the difference between Vite and Webpack
+      // 🌱 this means that you have explicit specified the entry file
       { 'file-type': 'file-type/index.js' },
     ]),
   ],
 }
 ```
 
-By default, the plugin use Webpack as build tools. You can specify Vite by `options.vite`  
-
-```js
-esmodule([...some-es-module], {
-  vite: true,
-  // or
-  vite: (config) => config,
-})
-```
-
-- execa.js
+execa.js
 
 ```js
 import {execa} from 'execa';
@@ -59,33 +48,20 @@ console.log(stdout);
 //=> 'unicorns'
 ```
 
-See the test [cases](https://github.com/vite-plugin/vite-plugin-esmodule/test)
+[👉 See test](https://github.com/vite-plugin/vite-plugin-esmodule/test)
 
 ## API
 
 #### esmodule(modules[,options])
 
-modules: ES module name list
-
 ```ts
-modules: (string | { [module: string]: string })[]
-```
+// ES module name list
+type modules = (string | { [module: string]: string })[]
 
-options:
-
-```ts
-options?: WebpackOptions | ViteOptions
-
-export interface WebpackOptions {
-  webpack?: true
-    | ((config: Configuration) => Configuration | void | Promise<Configuration | void>);
-  vite?: never;
-}
-
-export interface ViteOptions {
-  vite?: true
-    | ((config: UserConfig) => UserConfig | void | Promise<UserConfig | void>);
-  webpack?: never;
+type options = {
+  webpack?:
+  | Configuration
+  | ((config: Configuration) => Configuration | void | Promise<Configuration | void>);
 }
 ```
 
