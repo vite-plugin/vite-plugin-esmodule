@@ -1,4 +1,9 @@
 
+## [2022-07-02] v1.3.2
+
+- 4bec245 docs(🐞): typo
+- 07a0851 chore(deps): bump vite-plugin-optimizer to 1.3.4
+
 ## [2022-07-01] v1.3.1
 
 - fix(🐞): `require('vite-plugin-optimizer')`

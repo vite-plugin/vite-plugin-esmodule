@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-esmodule",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Build ES module to CommonJs module for Node.js/Electron",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/vite-plugin/vite-plugin-esmodule#readme",
   "dependencies": {
-    "vite-plugin-optimizer": "^1.3.2",
+    "vite-plugin-optimizer": "^1.3.4",
     "webpack": "^5.73.0"
   },
   "devDependencies": {
