@@ -15,6 +15,9 @@ module.exports = function esmodule(modules, options = {}) {
    */
   let env;
 
+  /**
+   * @type {import('vite').Plugin}
+   */
   const plugin = optimizer(
     (modules || []).reduce((memo, mod, idx) => {
       if (typeof mod === 'object') {
@@ -24,8 +27,7 @@ module.exports = function esmodule(modules, options = {}) {
       return Object.assign(memo, {
         [mod]: async args => {
           const isDev = env.command === 'serve';
-          const moduleCjsId = path.join(args.dir, mod, 'index.js');
-          const moduleEsmId = path.join(args.dir, mod, 'index.electron-renderer.js');
+          const { cjsId, electronRendererId } = getModuleId(path.join(args.dir, mod));
           if (idx === modules.length - 1) { // One time build
             await buildESModules(args, modules, options);
             isDev && writeEsmModules(args, modules);
@@ -34,7 +36,7 @@ module.exports = function esmodule(modules, options = {}) {
           return {
             alias: {
               find: mod,
-              replacement: isDev ? moduleEsmId : moduleCjsId,
+              replacement: isDev ? electronRendererId : cjsId,
             }
           };
         },
@@ -44,28 +46,16 @@ module.exports = function esmodule(modules, options = {}) {
   );
 
   plugin.name = PLUGIN_NAME;
-  return [
-    {
-      name: `${PLUGIN_NAME}:init`,
-      config(_, _env) {
-        env = _env;
-      },
-    },
-    plugin
-  ];
+  const original = plugin.config;
 
-  // return [
-  //   {
-  //     name: `${name}:resolve`,
-  //     apply: 'build',
-  //     enforce: 'pre',
-  //     resolveId(source) {
-  //       // Bypass Vite's `vite:resolve` plugin
-  //       return modules.includes(source) ? source : null;
-  //     },
-  //   },
-  //   plugin,
-  // ];
+  plugin.config = function conf(_config, _env) {
+    env = _env;
+    if (original) {
+      return original(_config, _env);
+    }
+  };
+
+  return plugin;
 };
 
 /**
@@ -137,11 +127,10 @@ function logError(error, exit = true) {
 function writeEsmModules(args, modules) {
   for (const mod of modules) {
     const moduleName = typeof mod === 'object' ? Object.keys(mod)[0] : mod
-    const moduleCjsId = path.join(args.dir, moduleName, 'index.js');
-    const moduleEsmId = path.join(args.dir, moduleName, 'index.electron-renderer.js');
+    const { cjsId, electronRendererId } = getModuleId(path.join(args.dir, moduleName));
 
     // 🚧 For Electron-Renderer
-    const cjsModule = require(moduleCjsId);
+    const cjsModule = require(cjsId);
     const requireModule = `const _M_ = require("${CACHE_DIR}/${mod}");`;
     const exportDefault = `const _D_ = _M_.default || _M_;\nexport { _D_ as default };`;
     const exportMembers = Object
@@ -153,6 +142,16 @@ ${requireModule}
 ${exportDefault}
 ${exportMembers}
 `.trim();
-    fs.writeFileSync(moduleEsmId, esmModuleCodeSnippet);
+    fs.writeFileSync(electronRendererId, esmModuleCodeSnippet);
   }
+}
+
+/**
+ * @type {(dir: string) => { cjsId: string; electronRendererId: string; }}
+ */
+function getModuleId(dir) {
+  return {
+    cjsId: path.join(dir, 'index.js'),
+    electronRendererId: path.join(dir, 'index.electron-renderer.js'),
+  };
 }
