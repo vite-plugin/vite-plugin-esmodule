@@ -1,9 +1,13 @@
 
 ## [2022-07-12] v1.4.0
 
+- b834e02 Merge branch 'main' into v1.4.0
+- 5dd3714 Merge pull request #4 from lights0123/fix-esm-object
+- b89b8d0 v1.4.0
+- d5b198b log: v1.4.0
 - f153438 docs: v1.4.0
 - 7e15a60 refactor: automatic detect of ESM packages
-- f8c2edc chore: optimize code
+- 8de5395  fix(🐞): object syntax and esm
 
 ## [2022-07-02] v1.3.2
 
