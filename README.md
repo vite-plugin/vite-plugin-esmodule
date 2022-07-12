@@ -52,16 +52,15 @@ console.log(stdout);
 
 ## API
 
-#### esmodule(modules[,options])
-
 ```ts
-// ES module name list
-type modules = (string | { [module: string]: string })[]
-
-type options = {
-  webpack?:
-  | Configuration
-  | ((config: Configuration) => Configuration | void | Promise<Configuration | void>);
+export interface Esmodule {
+  (
+    /**
+     * If modules are not passed in, ESM packages will be automatically obtained from package.json in process.cwd path
+     */
+    modules?: (string | { [module: string]: string })[],
+    webpack?: ((config: Configuration) => Configuration | void | Promise<Configuration | void>),
+  ): Plugin;
 }
 ```
 
