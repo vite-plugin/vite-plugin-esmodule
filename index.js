@@ -178,7 +178,7 @@ function writeElectronRendererServeESM(args, modules) {
 
     // 🚧 For Electron-Renderer
     const cjsModule = require(cjsId);
-    const requireModule = `const _M_ = require("${CACHE_DIR}/${mod}");`;
+    const requireModule = `const _M_ = require("${CACHE_DIR}/${moduleName}");`;
     const exportDefault = `const _D_ = _M_.default || _M_;\nexport { _D_ as default };`;
     const exportMembers = Object
       .keys(cjsModule)
