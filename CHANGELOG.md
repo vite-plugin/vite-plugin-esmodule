@@ -1,4 +1,10 @@
 
+## [2022-07-12] v1.4.0
+
+- f153438 docs: v1.4.0
+- 7e15a60 refactor: automatic detect of ESM packages
+- f8c2edc chore: optimize code
+
 ## [2022-07-02] v1.3.2
 
 - 4bec245 docs(🐞): typo
