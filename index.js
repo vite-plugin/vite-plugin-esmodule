@@ -7,38 +7,18 @@ const PLUGIN_NAME = 'vite-plugin-esmodule';
 const CACHE_DIR = `.${PLUGIN_NAME}`;
 
 /**
- * @type {import('.').Esmodule}
+ * @type {import('.')}
  */
-module.exports = function esmodule(...args) {
-  /**
-   * @type {Parameters<import('.').Esmodule>[0] | undefined}
-   */
-  let modules;
-  /**
-   * @type {Parameters<import('.').Esmodule>[1] | undefined}
-   */
-  let webpackFn;
+module.exports = function esmodule(modules, webpackFn) {
   /**
    * @type {import('vite').ConfigEnv}
    */
   let env;
   const cwd = process.cwd();
 
-  if (args.length === 1) {
-    if (Array.isArray(args[0])) {
-      modules = args[0];
-    } else if (typeof args[0] === 'function') {
-      webpackFn = args[0];
-    }
-  } else if (args.length === 2) {
-    modules = args[0];
-    webpackFn = args[1];
-  }
-
-  // Set defalut value
-  if (!modules) {
+  if (typeof modules === 'function') {
     // deps(ESM) of package.json
-    modules = [];
+    const esmPkgs = [];
 
     // Resolve package.json dependencies and devDependencies
     const pkgId = lookupFile('package.json', [cwd]);
@@ -53,18 +33,24 @@ module.exports = function esmodule(...args) {
         if (_pkgId) {
           const _pkg = require(_pkgId);
           if (_pkg.type === 'module') {
-            modules.push(npmPkg);
+            esmPkgs.push(npmPkg);
           }
         }
       }
     }
+
+    modules = modules(esmPkgs);
+  }
+
+  if (!Array.isArray(modules)) {
+    throw new Error(`(modules) expects an array, but got: ${modules}`);
   }
 
   /**
    * @type {import('vite').Plugin}
    */
   const plugin = optimizer(
-    (modules || []).reduce((memo, mod, idx) => {
+    modules.reduce((memo, mod, idx) => {
       if (typeof mod === 'object') {
         // e.g. { 'file-type': 'file-type/index.js' }
         mod = Object.keys(mod)[0];

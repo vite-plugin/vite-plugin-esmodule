@@ -2,8 +2,8 @@
 
 Build ES module to CommonJs module for Node.js/Electron
 
-[![NPM version](https://img.shields.io/npm/v/vite-plugin-esmodule.svg?style=flat)](https://npmjs.org/package/vite-plugin-esmodule)
-[![NPM Downloads](https://img.shields.io/npm/dm/vite-plugin-esmodule.svg?style=flat)](https://npmjs.org/package/vite-plugin-esmodule)
+[![NPM version](https://img.shields.io/npm/v/vite-plugin-esmodule.svg)](https://npmjs.org/package/vite-plugin-esmodule)
+[![NPM Downloads](https://img.shields.io/npm/dm/vite-plugin-esmodule.svg)](https://npmjs.org/package/vite-plugin-esmodule)
 
 ## Why 🤔
 
@@ -48,20 +48,24 @@ console.log(stdout);
 //=> 'unicorns'
 ```
 
-[👉 See test](https://github.com/vite-plugin/vite-plugin-esmodule/test)
+<!-- [👉 See test](https://github.com/vite-plugin/vite-plugin-esmodule/test) -->
 
 ## API
 
+`esmodule(modules[, webpack])`
+
 ```ts
-export interface Esmodule {
-  (
-    /**
-     * If modules are not passed in, ESM packages will be automatically obtained from package.json in process.cwd path
-     */
-    modules?: (string | { [module: string]: string })[],
-    webpack?: ((config: Configuration) => Configuration | void | Promise<Configuration | void>),
-  ): Plugin;
-}
+import type { Plugin } from 'vite'
+import type { Configuration } from 'webpack'
+
+export type ModuleRecord = string | { [module: string]: string }
+
+declare function exports(
+  modules: ModuleRecord[] | ((esmPkgs: string[]) => ModuleRecord[]),
+  webpack?: ((config: Configuration) => Configuration | void | Promise<Configuration | void>),
+): Plugin
+
+export = exports
 ```
 
 ## How to work

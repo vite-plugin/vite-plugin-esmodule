@@ -1,4 +1,10 @@
 
+## [2022-07-26] v1.4.2
+
+- 7e2c787 docs: v1.4.2
+- 9ca00dc refactor: better type define
+- b0e56ef refactor: `modules` support function
+
 ## [2022-07-12] v1.4.1
 
 - 8de5395  fix(🐞): object syntax and esm
