@@ -1,3 +1,3 @@
-import got from 'got'
+import { fileTypeFromFile } from 'file-type'
 
-console.log(got)
+console.log(fileTypeFromFile)
