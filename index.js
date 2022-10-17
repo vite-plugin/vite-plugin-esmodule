@@ -156,7 +156,7 @@ function logError(error, exit = true) {
 }
 
 /**
- * @type {(options: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('vite-plugin-esmodule')>) => Promise<void>}
+ * @type {(options: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('vite-plugin-esmodule')>) => void}
  */
 function writeElectronRendererServeESM(options, modules) {
   for (const mod of modules) {
