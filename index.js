@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const optimizer = require('vite-plugin-optimizer');
+const libEsm = require('lib-esm');
 
 const PLUGIN_NAME = 'vite-plugin-esmodule';
 const CACHE_DIR = `.${PLUGIN_NAME}`;
@@ -9,7 +10,7 @@ const CACHE_DIR = `.${PLUGIN_NAME}`;
 /**
  * @type {import('.')}
  */
-module.exports = function esmodule(modules, webpackFn) {
+function esmodule(modules, webpackFn) {
   /**
    * @type {import('vite').ConfigEnv}
    */
@@ -43,7 +44,7 @@ module.exports = function esmodule(modules, webpackFn) {
   }
 
   if (!Array.isArray(modules)) {
-    throw new Error(`(modules) expects an array, but got: ${modules}`);
+    throw new Error(`[vite-plugin-esmodule] esmodule(modules) expects an array, but got: ${modules}`);
   }
 
   /**
@@ -155,27 +156,22 @@ function logError(error, exit = true) {
 }
 
 /**
- * @type {(args: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('.').Esmodule>) => Promise<void>}
+ * @type {(options: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('vite-plugin-esmodule')>) => Promise<void>}
  */
-function writeElectronRendererServeESM(args, modules) {
+function writeElectronRendererServeESM(options, modules) {
   for (const mod of modules) {
     const moduleName = typeof mod === 'object' ? Object.keys(mod)[0] : mod
-    const { cjsId, electronRendererId } = getModuleId(path.join(args.dir, moduleName));
+    const { cjsId, electronRendererId } = getModuleId(path.join(options.dir, moduleName));
+    const result = libEsm({
+      require: `${CACHE_DIR}/${moduleName}`,
+      exports: Object.keys(require(cjsId)),
+    });
 
-    // 🚧 For Electron-Renderer
-    const cjsModule = require(cjsId);
-    const requireModule = `const _M_ = require("${CACHE_DIR}/${moduleName}");`;
-    const exportDefault = `const _D_ = _M_.default || _M_;\nexport { _D_ as default };`;
-    const exportMembers = Object
-      .keys(cjsModule)
-      .filter(n => n !== 'default')
-      .map(attr => `export const ${attr} = _M_.${attr};`).join('\n')
-    const esmModuleCodeSnippet = `
-${requireModule}
-${exportDefault}
-${exportMembers}
-`.trim();
-    fs.writeFileSync(electronRendererId, esmModuleCodeSnippet);
+    fs.writeFileSync(
+      ensureDir(electronRendererId),
+      // `const _M_ = require("${CACHE_DIR}/${moduleName}");\n${result.exports}`,
+      `const _M_ = require("./index.js");\n${result.exports}`,
+    );
   }
 }
 
@@ -200,3 +196,18 @@ function lookupFile(filename, paths) {
     }
   }
 }
+
+function ensureDir(filename) {
+  const dirname = path.dirname(filename);
+  !fs.existsSync(dirname) && fs.mkdirSync(dirname, { recursive: true });
+  return filename;
+}
+
+esmodule.__test__ = {
+  CACHE_DIR,
+  ensureDir,
+  getModuleId,
+  writeElectronRendererServeESM,
+};
+
+module.exports = esmodule;
