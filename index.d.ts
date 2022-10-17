@@ -1,11 +1,13 @@
-import type { Plugin } from 'vite'
-import type { Configuration } from 'webpack'
+declare module 'vite-plugin-esmodule' {
+  import type { Configuration } from 'webpack'
 
-export type ModuleRecord = string | { [module: string]: string }
+  type ModuleRecord = string | { [module: string]: string }
 
-declare function exports(
-  modules: ModuleRecord[] | ((esmPkgs: string[]) => ModuleRecord[]),
-  webpack?: ((config: Configuration) => Configuration | void | Promise<Configuration | void>),
-): Plugin
+  function esmodule(
+    modules: ModuleRecord[] | ((esmPkgs: string[]) => ModuleRecord[]),
+    webpack?: ((config: Configuration) => Configuration | void | Promise<Configuration | void>),
+  ): import('vite').Plugin
 
-export = exports
+  // https://www.typescriptlang.org/docs/handbook/declaration-files/templates/module-d-ts.html#default-exports
+  export = esmodule
+}

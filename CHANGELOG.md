@@ -1,3 +1,11 @@
+## [2022-10-17] v1.4.3
+
+- e9201bf v1.4.3
+- e28a9f9 docs: v1.4.3
+- 2bd756b feat: add test
+- 6f2266c feat: support `"type": "module"`
+- bddbc85 refactor: use lib-esm
+- 8b905b3 fix(#8): type define
 
 ## [2022-07-26] v1.4.2
 

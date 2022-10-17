@@ -50,22 +50,19 @@ console.log(stdout);
 
 <!-- [👉 See test](https://github.com/vite-plugin/vite-plugin-esmodule/test) -->
 
-## API
+## API <sub><sup>(Define)</sup></sub>
 
 `esmodule(modules[, webpack])`
 
 ```ts
-import type { Plugin } from 'vite'
 import type { Configuration } from 'webpack'
 
-export type ModuleRecord = string | { [module: string]: string }
+type ModuleRecord = string | { [module: string]: string }
 
-declare function exports(
+function esmodule(
   modules: ModuleRecord[] | ((esmPkgs: string[]) => ModuleRecord[]),
   webpack?: ((config: Configuration) => Configuration | void | Promise<Configuration | void>),
-): Plugin
-
-export = exports
+): import('vite').Plugin
 ```
 
 ## How to work
