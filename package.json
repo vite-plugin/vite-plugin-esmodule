@@ -34,8 +34,8 @@
   },
   "homepage": "https://github.com/vite-plugin/vite-plugin-esmodule#readme",
   "dependencies": {
-    "lib-esm": "~0.2.0",
-    "vite-plugin-optimizer": "~1.4.1",
+    "lib-esm": "~0.3.0",
+    "vite-plugin-optimizer": "~1.4.2",
     "webpack": "^5.74.0"
   },
   "devDependencies": {
