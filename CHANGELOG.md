@@ -1,3 +1,10 @@
+## [2022-10-19] v1.4.4
+
+- 952da00 v1.4.4
+- 3eeb30d refactor(test): better test
+- dbaa170 chore(deps): bump lib-esm to 0.3.0, vite-plugin-optimizer to 1.4.2
+- 97378e0 fix(#7): compatible Electron-Renderer
+
 ## [2022-10-17] v1.4.3
 
 - e9201bf v1.4.3

@@ -169,8 +169,9 @@ function writeElectronRendererServeESM(options, modules) {
 
     fs.writeFileSync(
       ensureDir(electronRendererId),
-      // `const _M_ = require("${CACHE_DIR}/${moduleName}");\n${result.exports}`,
-      `const _M_ = require("./index.js");\n${result.exports}`,
+      `const _M_ = require("${CACHE_DIR}/${moduleName}");\n${result.exports}`,
+      // 🐞 BUG in Electron-Renderer
+      // `const _M_ = require("./index.js");\n${result.exports}`,
     );
   }
 }
