@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const libEsm = require('lib-esm');
+const libEsm = require('lib-esm').default;
 
 // const iswatch = process.argv.slice(2).includes('--watch');
 

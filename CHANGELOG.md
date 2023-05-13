@@ -1,3 +1,7 @@
+## [2023-05-13] v1.5.0
+
+- b0df1c0 feat: support custom `webpack` version
+
 ## [2022-10-19] v1.4.4
 
 - 952da00 v1.4.4
