@@ -14,7 +14,7 @@ When using ES modules(e.g.`node-fetch`) in Node.js/Electron projects, we may nee
 ## Install
 
 ```sh
-npm i vite-plugin-esmodule -D
+npm i -D vite-plugin-esmodule webpack
 ```
 
 ## Usage

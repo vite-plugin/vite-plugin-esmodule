@@ -8,6 +8,8 @@ const vite = require('vite');
 const esmodule = require('vite-plugin-esmodule');
 const test = esmodule.__test__;
 const moduleName = 'file-type';
+
+const TAG = '[test]';
 const node_modules = path.join(__dirname, '../node_modules');
 const __snapshots__ = path.join(__dirname, '__snapshots__');
 
@@ -63,6 +65,6 @@ function runTest() {
   child.stdout.on('data', chunk => {
     const str = chunk.toString().trim();
     assert.equal(str, '[AsyncFunction: fileTypeFromFile]');
-    console.log('test success');
+    console.log(TAG, 'index.js passed ✅');
   });
 }

@@ -1,16 +1,23 @@
 const fs = require('fs');
 const path = require('path');
-const webpack = require('webpack');
 const optimizer = require('vite-plugin-optimizer');
-const libEsm = require('lib-esm');
+const libEsm = require('lib-esm').default;
 
 const PLUGIN_NAME = 'vite-plugin-esmodule';
+const TAG = `[${PLUGIN_NAME}]`;
 const CACHE_DIR = `.${PLUGIN_NAME}`;
 
 /**
- * @type {import('.')}
+ * @type {import('vite-plugin-esmodule')}
  */
 function esmodule(modules, webpackFn) {
+  try {
+    require.resolve('webpack');
+  } catch (error) {
+    console.log(TAG, '"webpack" is a required dependency, make sure you have it installed?');
+    return;
+  }
+
   /**
    * @type {import('vite').ConfigEnv}
    */
@@ -93,38 +100,21 @@ function esmodule(modules, webpackFn) {
 };
 
 /**
- * @type {(args: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('.').Esmodule>) => Promise<void>}
+ * @type {(args: import('vite-plugin-optimizer').OptimizerArgs, ...args: Parameters<import('vite-plugin-esmodule')>) => Promise<void>}
  */
-async function buildESModules(args, modules, webpackFn) {
-  const entries = modules.reduce((memo, mod) => {
-    const [key, val] = typeof mod === 'object' ? Object.entries(mod)[0] : [mod, mod];
-    return Object.assign(memo, {
-      // This is essentially an alias
-      // e.g. { esm-pkg: 'node_modules/.vite-plugin-esmodule/esm-pkg.js' }
-      [key]: require.resolve(val),
-    });
-  }, {});
+async function buildESModules(
+  args,
+  modules,
+  webpackFn,
+) {
+  await new Promise(async resolve => {
+    const webpack = require('webpack');
+    const config = await resolveWebpackConfig(
+      modules,
+      args.dir,
+      webpackFn,
+    );
 
-  /**
-   * @type {import('webpack').Configuration}
-   */
-  let config = {
-    mode: 'none',
-    target: 'node14',
-    entry: entries,
-    output: {
-      library: {
-        type: 'commonjs2',
-      },
-      path: args.dir,
-      filename: '[name]/index.js',
-    },
-  };
-  if (typeof webpackFn === 'function') {
-    config = webpackFn(config) || config;
-  }
-
-  await new Promise(resolve => {
     fs.rmSync(args.dir, { recursive: true, force: true });
 
     // Whey use Webpack?
@@ -202,6 +192,48 @@ function ensureDir(filename) {
   const dirname = path.dirname(filename);
   !fs.existsSync(dirname) && fs.mkdirSync(dirname, { recursive: true });
   return filename;
+}
+
+function modules2entries(modules) {
+  return modules.reduce((memo, mod) => {
+    const [key, val] = typeof mod === 'object' ? Object.entries(mod)[0] : [mod, mod];
+    return Object.assign(memo, {
+      // This is essentially an alias
+      // e.g. { esm-pkg: 'node_modules/.vite-plugin-esmodule/esm-pkg.js' }
+      [key]: require.resolve(val),
+    });
+  }, {});
+}
+
+/**
+ * @type {(
+ *   modules: Record<string, string>,
+ *   outputPath: string,
+ *   webpackFn: Parameters<import('vite-plugin-esmodule')>[1]
+ * ) => Promise<import('webpack').Configuration>}
+ */
+function resolveWebpackConfig(
+  modules,
+  outputPath,
+  webpackFn,
+) {
+  /**
+   * @type {import('webpack').Configuration}
+   */
+  const config = {
+    mode: 'none',
+    target: 'node14',
+    entry: modules2entries(modules),
+    output: {
+      library: {
+        type: 'commonjs2',
+      },
+      path: outputPath,
+      filename: '[name]/index.js',
+    },
+  };
+
+  return typeof webpackFn === 'function' ? webpackFn(config) : config;
 }
 
 esmodule.__test__ = {
